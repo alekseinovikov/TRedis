@@ -7,6 +7,7 @@ import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.reactive.asFlow
 import kotlinx.coroutines.reactive.awaitFirstOrNull
+import kotlinx.coroutines.reactive.awaitSingle
 import kotlinx.coroutines.runBlocking
 import mu.KotlinLogging
 import org.springframework.beans.factory.annotation.Autowired
@@ -16,6 +17,7 @@ import org.springframework.boot.runApplication
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.data.redis.connection.ReactiveRedisConnectionFactory
+import org.springframework.data.redis.connection.ValueEncoding
 import org.springframework.data.redis.core.*
 import org.springframework.data.redis.serializer.Jackson2JsonRedisSerializer
 import org.springframework.data.redis.serializer.RedisSerializationContext
@@ -51,14 +53,25 @@ class TRedisApplication : CommandLineRunner {
                 .asFlow()
         }.toList()
 
-        val refsCount = redisOperations.executeAsFlow { conn ->
+        val stats = redisOperations.executeAsFlow { conn ->
             keys.map { key ->
-                conn.keyCommands().refcount(ByteBuffer.wrap(key.toByteArray()))
+                val keyByteBuffer = ByteBuffer.wrap(key.toByteArray())
+                Triple(
+                    key,
+                    conn.keyCommands().encodingOf(keyByteBuffer),
+                    conn.keyCommands().refcount(keyByteBuffer)
+                )
             }.asFlow()
-        }.mapNotNull { it.awaitFirstOrNull() }
-            .toList()
+        }.mapNotNull { origin ->
+            val refsCount = origin.third.awaitFirstOrNull()
+            if (refsCount == null || refsCount <= 0) return@mapNotNull null
 
-        logger.info { "Refs count: $refsCount" }
+            val encodingValue: String? =
+                origin.second.awaitSingle().raw()
+            Triple(origin.first, encodingValue, refsCount)
+        }.toList()
+
+        logger.info { "Stats: $stats" }
     }
 
 }
