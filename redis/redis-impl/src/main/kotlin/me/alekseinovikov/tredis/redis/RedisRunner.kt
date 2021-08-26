@@ -1,7 +1,5 @@
-package me.freedom4live.tredis.tredis
+package me.alekseinovikov.tredis.redis
 
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.toList
@@ -12,30 +10,23 @@ import kotlinx.coroutines.runBlocking
 import mu.KotlinLogging
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.CommandLineRunner
-import org.springframework.boot.autoconfigure.SpringBootApplication
-import org.springframework.boot.runApplication
-import org.springframework.context.annotation.Bean
-import org.springframework.context.annotation.Configuration
-import org.springframework.data.redis.connection.ReactiveRedisConnectionFactory
-import org.springframework.data.redis.connection.ValueEncoding
-import org.springframework.data.redis.core.*
-import org.springframework.data.redis.serializer.Jackson2JsonRedisSerializer
-import org.springframework.data.redis.serializer.RedisSerializationContext
-import org.springframework.data.redis.serializer.StringRedisSerializer
+import org.springframework.data.redis.core.ReactiveRedisOperations
+import org.springframework.data.redis.core.executeAsFlow
+import org.springframework.data.redis.core.getAndAwait
+import org.springframework.data.redis.core.setAndAwait
+import org.springframework.stereotype.Component
 import java.nio.ByteBuffer
 
 
+data class Coffee(val id: String, val name: String)
+
 private val logger = KotlinLogging.logger {}
 
-@SpringBootApplication
-class TRedisApplication : CommandLineRunner {
+@Component
+class RedisRunner : CommandLineRunner {
 
     @Autowired
     private lateinit var redisOperations: ReactiveRedisOperations<String, Coffee>
-
-    @Autowired
-    private lateinit var redisConnectionFactory: ReactiveRedisConnectionFactory
-
 
     override fun run(vararg args: String?): Unit = runBlocking {
         val late = Coffee("LATE", "late")
@@ -75,27 +66,3 @@ class TRedisApplication : CommandLineRunner {
     }
 
 }
-
-fun main(args: Array<String>) {
-    runApplication<TRedisApplication>(*args)
-}
-
-
-@Configuration
-class RedisConfiguration {
-
-    @Bean
-    fun redisOperations(redisFactory: ReactiveRedisConnectionFactory): ReactiveRedisOperations<String, Coffee> {
-        val serializer = Jackson2JsonRedisSerializer(Coffee::class.java).apply {
-            setObjectMapper(ObjectMapper().registerKotlinModule())
-        }
-
-        val builder = RedisSerializationContext.newSerializationContext<String, Coffee>(StringRedisSerializer())
-
-        val context = builder.value(serializer).build()
-        return ReactiveRedisTemplate(redisFactory, context)
-    }
-
-}
-
-data class Coffee(val id: String, val name: String)
