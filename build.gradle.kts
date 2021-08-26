@@ -5,6 +5,7 @@ plugins {
     id("io.spring.dependency-management") version "1.0.11.RELEASE"
     kotlin("jvm") version "1.5.30"
     kotlin("plugin.spring") version "1.5.30"
+    id("org.openjfx.javafxplugin") version "0.0.10"
 }
 
 val kotlinLoggingVersion: String by project
@@ -18,6 +19,7 @@ allprojects {
     apply(plugin = "kotlin-spring")
     apply(plugin = "java")
     apply(plugin = "io.spring.dependency-management")
+    apply(plugin = "org.openjfx.javafxplugin")
 
     repositories {
         mavenCentral()
