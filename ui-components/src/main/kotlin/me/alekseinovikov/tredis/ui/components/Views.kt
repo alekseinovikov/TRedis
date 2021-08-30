@@ -6,7 +6,7 @@ class FirstView : View("FirstTitle") {
 
     override val root = vbox {
         label { text = "Hello! World!" }
-        button("Show animation again!") { action { replaceWith<Main>() } }
+        button("Show animation again!") { action { replaceWithLoadingScreen<Main>() } }
     }
 
 }

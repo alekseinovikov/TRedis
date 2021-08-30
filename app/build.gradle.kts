@@ -8,7 +8,7 @@ apply(plugin = "application")
 
 dependencies {
     implementation(project(":ui-components"))
-    implementation(project(":redis:redis-impl"))
+   /* implementation(project(":redis:redis-impl"))*/
 
     implementation("org.springframework.boot:spring-boot-starter")
     implementation("no.tornado:tornadofx:$tornadoFxVersion")
